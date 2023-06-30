@@ -12,8 +12,11 @@ export const fetchFromApi = async (url) => {
       }
     );
     const res = await req.json();
-    return res.lighthouseResult;
+    console.log(res);
+    if (res.status === 200) return res.lighthouseResult;
+    if (res.error) return res.error;
   } catch (e) {
+    console.log(e);
     throw new Error(e);
   }
 };
