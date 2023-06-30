@@ -1,11 +1,14 @@
 import {useState} from "react";
 
 import { fetchFromApi } from "../../api/api.js";
-import {SearchBar} from "../../components/SearchBar.jsx";
+import { SearchBar } from "../../components/SearchBar.jsx";
+import { ProgressCircle } from '../../components/ProgressCircle'
 
 export const Home = () => {
     const [search, setSearch] = useState('')
-    const [data, setData] = useState({})
+    const [globalPerformance, setGlobalPerformance] = useState({})
+    const [audits, setAudits] = useState({})
+    const [auditUrl, setAuditUrl] = useState('')
     const [isValidUrl, setIsValidUrl] = useState(true);
 
     const validateUrl = (string) => {
@@ -21,48 +24,70 @@ export const Home = () => {
         const cleanedUrl = withHttps(url)
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "");
-    
+
         if (validateUrl(cleanedUrl)) {
           setIsValidUrl(true);
-          getData(cleanedUrl)
+          setTimeout(() => {
+              getData(cleanedUrl)
+          }, 300);
         } else {
           setIsValidUrl(false);
         }
       };
 
-    const getData = search => {
-        setData(fetchFromApi(search))
+    const getData = async search => {
+        const data = await fetchFromApi(search)
+        const {categories, audits, finalUrl} = data
+        const {performance} = categories
+        setGlobalPerformance(performance)
+        setAuditUrl(finalUrl)
+
+        const mappedAudits = 
+        Object.entries(audits)
+        .map(([key, value]) => {
+            if (value.score !== null && value.score !== 0) {
+                return {
+                    key,
+                    score: value.score,
+                    title: value.title,
+                    description: value.description,
+                };
+            }
+            return null;
+        })
+        .filter((item) => item !== null)
+        .sort((a, b) => b.score - a.score)
+
+
+        setAudits(mappedAudits)
     }
 
     return (
         <>
             <SearchBar search={search} setSearch={(q)=>setSearch(q)} action={()=>handleSearch(search)} isValid={isValidUrl} />
-            <h1>home</h1>
-                <h2>Score total : {data.categories && `${data.categories.performance.score * 100} %`}</h2>
-                {console.log(data)}
-            {data.audits &&
-                Object.entries(data.audits)
-                    .map(([key, value]) => {
-                        if (value.score !== null && value.score !== 0) {
-                            return {
-                                key,
-                                score: value.score,
-                                title: value.title,
-                                description: value.description,
-                            };
-                        }
-                        return null;
-                    })
-                    .filter((item) => item !== null)
-                    .sort((a, b) => b.score - a.score)
-                    .map((item) => (
-                        <div className="p-5 bg-slate-50" key={item.key}>
-                            <h1>Title: {item.title}</h1>
-                            <h2>Score: {item.score * 100} %</h2>
-                            <p>Desc: {item.description}</p>
+            {globalPerformance.score &&
+            <div>
+                <h2>Score global pour {auditUrl}</h2>
+                <ProgressCircle score={(globalPerformance.score * 100)}/>
+            </div>
+            }
+            {audits.length > 0 && audits.map(item => (
+                <div className="p-5 bg-slate-50" key={item.key}>
+                    {item.score >= 0.9 &&
+                        <div className='text-green-700'>
+                            <h1>{item.title}</h1>
+                            <h2>{item.score * 100} %</h2>
                         </div>
-                    ))}
-
+                    }
+                    {
+                        
+                    }
+                    {item.score < 0.9 
+                    ? <p>{item.description}</p>
+                    : ''
+                    }
+                </div>
+            ))}
         </>
     )
 }
