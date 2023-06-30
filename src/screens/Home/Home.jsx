@@ -52,7 +52,7 @@ export const Home = () => {
     const getData = async search => {
         const data = await fetchFromApi(search)
         console.log(data)
-        if(data.status) {
+        if(data.code) {
             console.log(data)
             setIsError(true);
             setErrorContent(data.message);
