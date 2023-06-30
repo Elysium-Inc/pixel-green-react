@@ -51,49 +51,51 @@ export const Home = () => {
 
     const getData = async search => {
         const data = await fetchFromApi(search)
-        if(data.code !== 200) {
+        console.log(data)
+        if(data.status) {
             console.log(data)
             setIsError(true);
             setErrorContent(data.message);
+        } else {
+            const {categories, audits, finalUrl} = data
+            const {performance} = categories
+            setGlobalPerformance(performance)
+            setAuditUrl(finalUrl)
+            setIsError(false)
+    
+            const mappedAudits = 
+            Object.entries(audits)
+            .map(([key, value]) => {
+                if (value.score !== null && value.score !== 0) {
+                    return {
+                        key,
+                        score: value.score,
+                        title: value.title,
+                        description: value.description,
+                    };
+                }
+                return null;
+            })
+            .filter((item) => item !== null)
+            .sort((a, b) => b.score - a.score)
+    
+            mappedAudits.map(audit => {
+                const {score, description, title, key} = audit
+                if(score >= 0.9) setGreenAudits(prev => [...prev, {score, description, title, key}])
+                if(score >= 0.85 && score < 0.9) setYellowAudits(prev => [...prev, {score, description, title, key}])
+                if(score >= 0.80 && score < 0.85) setOrangeAudits(prev => [...prev, {score, description, title, key}])
+                if(score < 0.8) setRedAudits(prev => [...prev, {score, description, title, key}])
+            })
+            setIsLoading(false)
         }
         
-        const {categories, audits, finalUrl} = data
-        const {performance} = categories
-        setGlobalPerformance(performance)
-        setAuditUrl(finalUrl)
-        setIsError(false)
-
-        const mappedAudits = 
-        Object.entries(audits)
-        .map(([key, value]) => {
-            if (value.score !== null && value.score !== 0) {
-                return {
-                    key,
-                    score: value.score,
-                    title: value.title,
-                    description: value.description,
-                };
-            }
-            return null;
-        })
-        .filter((item) => item !== null)
-        .sort((a, b) => b.score - a.score)
-
-        mappedAudits.map(audit => {
-            const {score, description, title, key} = audit
-            if(score >= 0.9) setGreenAudits(prev => [...prev, {score, description, title, key}])
-            if(score >= 0.85 && score < 0.9) setYellowAudits(prev => [...prev, {score, description, title, key}])
-            if(score >= 0.80 && score < 0.85) setOrangeAudits(prev => [...prev, {score, description, title, key}])
-            if(score < 0.8) setRedAudits(prev => [...prev, {score, description, title, key}])
-        })
-        setIsLoading(false)
     }
 
     return (
         <>
             <SearchBar search={search} setSearch={(q)=>setSearch(q)} action={()=>handleSearch(search)} isValid={isValidUrl} loading={isLoading} />
             {isError && <ErrorPage  error={errorContent}/>}
-            {isLoading && !isError? <Loading /> : globalPerformance.score &&
+            {isLoading ? <Loading /> : globalPerformance.score &&
             <div className="text-center font-medium text-lg">
                 <h2>Note Eco-Responsable pour {auditUrl}</h2>
                 <ProgressCircle score={(globalPerformance.score * 100)}/>
