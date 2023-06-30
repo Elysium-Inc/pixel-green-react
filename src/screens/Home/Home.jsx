@@ -95,7 +95,7 @@ export const Home = () => {
         <>
             <SearchBar search={search} setSearch={(q)=>setSearch(q)} action={()=>handleSearch(search)} isValid={isValidUrl} loading={isLoading} />
             {isError && <ErrorPage  error={errorContent}/>}
-            {isLoading ? <Loading /> : globalPerformance.score &&
+            {isLoading && !isError ? <Loading /> : globalPerformance.score &&
             <div className="text-center font-medium text-lg">
                 <h2>Note Eco-Responsable pour {auditUrl}</h2>
                 <ProgressCircle score={(globalPerformance.score * 100)}/>
