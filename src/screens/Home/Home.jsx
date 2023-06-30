@@ -1,33 +1,45 @@
+import {useState} from "react";
+
+import { fetchFromApi } from "../../api/api.js";
 import {SearchBar} from "../../components/SearchBar.jsx";
-import {useEffect, useState} from "react";
-import {useNavigate} from "react-router-dom";
 
 export const Home = () => {
     const [search, setSearch] = useState('')
     const [data, setData] = useState({})
-    const[res, setRes] = useState({})
-    const getData = async (url) => {
-        try {
-            const req = await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}&category=PERFORMANCE&locale=fr`,
-                {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-            const res = await req.json()
-            setData(res.lighthouseResult)
-            console.log(res)
-        }catch (e) {
-            console.log(e)
-        }
+    const [isValidUrl, setIsValidUrl] = useState(true);
 
+    const validateUrl = (string) => {
+        return /^(?:\w+:)?\/\/([^\s.]+\.\S{2}|localhost[:?\d]*)\S*$/.test(string);
+      };
+
+      const handleSearch = (url) => {
+        console.log(url)
+        const withHttps = (url) =>
+          url.replace(/^(?:(.*:)?\/\/)?(.*)/i, (match, schema, nonSchemaUrl) =>
+            schema ? match : `https://${nonSchemaUrl}`
+          );
+        const cleanedUrl = withHttps(url)
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+    
+        if (validateUrl(cleanedUrl)) {
+          setIsValidUrl(true);
+          getData(cleanedUrl)
+        } else {
+          setIsValidUrl(false);
+        }
+      };
+
+    const getData = search => {
+        setData(fetchFromApi(search))
     }
+
     return (
         <>
-            <SearchBar search={search} setSearch={(q)=>setSearch(q)} action={()=>getData(search)}/>
+            <SearchBar search={search} setSearch={(q)=>setSearch(q)} action={()=>handleSearch(search)} isValid={isValidUrl} />
             <h1>home</h1>
                 <h2>Score total : {data.categories && `${data.categories.performance.score * 100} %`}</h2>
+                {console.log(data)}
             {data.audits &&
                 Object.entries(data.audits)
                     .map(([key, value]) => {
