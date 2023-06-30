@@ -18,7 +18,7 @@ export const ProgressCircle = ({score}) => {
 
     return (
         <>
-            <svg width="200" height="200">
+            <svg className="mx-auto" width="200" height="200">
                 <g transform="rotate(-90 100 100)">
                     <circle r="70" cx="100" cy="100" fill="transparent" stroke="lightgrey" strokeWidth="2rem" strokeDasharray="439.8" strokeDashoffset="0"></circle>
                     <circle r="70" cx="100" cy="100" fill="transparent" stroke={setColor} strokeWidth="2rem" strokeDasharray="439.8" strokeDashoffset={progressScore(score)}>
